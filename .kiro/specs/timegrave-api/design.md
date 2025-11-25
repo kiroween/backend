@@ -57,10 +57,15 @@ graph TB
 
 ### API Endpoints
 
-```typescript
-GET /api/graveyard
-POST /api/tombstones
-GET /api/tombstones/:id
+```
+POST /users/sign-in          # 로그인
+POST /users/sign-out         # 로그아웃
+POST /users                  # 회원가입
+DELETE /users                # 회원탈퇴
+
+GET /graves                  # 묘지 대시보드 목록 조회
+POST /graves                 # 묘지 생성
+GET /graves/{id}             # 묘지 조회
 ```
 
 ### Core Models (Pydantic)
@@ -183,53 +188,14 @@ class TombstoneResponseDto(BaseModel):
 
 ### API Request/Response Examples
 
-#### GET /api/graveyard
-
-**Request:**
-```
-GET /api/graveyard
-```
-
-**Response (200 OK):**
-```json
-{
-  "status": 200,
-  "data": {
-    "result": [
-      {
-        "id": 1,
-        "userId": 1,
-        "title": "첫 번째 기억",
-        "unlockDate": "2025-12-31",
-        "isUnlocked": false,
-        "daysRemaining": 365,
-        "createdAt": "2025-01-01T00:00:00Z",
-        "updatedAt": "2025-01-01T00:00:00Z"
-      },
-      {
-        "id": 2,
-        "userId": 1,
-        "title": "두 번째 기억",
-        "unlockDate": "2024-01-01",
-        "isUnlocked": true,
-        "content": "이미 열린 기억의 내용",
-        "createdAt": "2024-01-01T00:00:00Z",
-        "updatedAt": "2024-01-01T00:00:00Z"
-      }
-    ]
-  }
-}
-```
-
-#### POST /api/tombstones
+#### POST /users (회원가입)
 
 **Request:**
 ```json
 {
-  "userId": 1,
-  "title": "모나리자",
-  "content": "루브르 박물관에서 본 모나리자의 미소",
-  "unlockDate": "2026-11-08"
+  "email": "ghost@timegrave.com",
+  "password": "eternal2024!",
+  "username": "영혼의수호자"
 }
 ```
 
@@ -239,69 +205,276 @@ GET /api/graveyard
   "status": 201,
   "data": {
     "result": {
-      "id": 1,
-      "userId": 1,
-      "title": "모나리자",
-      "unlockDate": "2026-11-08",
-      "isUnlocked": false,
-      "createdAt": "2025-11-08T11:17:06Z",
-      "updatedAt": "2025-11-08T11:17:06Z"
+      "id": 42,
+      "email": "ghost@timegrave.com",
+      "username": "영혼의수호자",
+      "createdAt": "2025-11-26T14:30:00Z"
     },
-    "response": "모나리자(와)과의 즐거운 대화를 나눠보세요!"
+    "message": "환영합니다, 영혼의수호자님. TimeGrave에 오신 것을 환영합니다."
   }
 }
 ```
 
-**Error Response (400 Bad Request):**
+**Error Response (400 Bad Request - 이메일 중복):**
 ```json
 {
   "status": 400,
   "error": {
-    "message": "Unlock date must be in the future"
+    "code": "EMAIL_ALREADY_EXISTS",
+    "message": "이미 사용 중인 이메일입니다."
   }
 }
 ```
 
-#### GET /api/tombstones/:id
+#### POST /users/sign-in (로그인)
 
 **Request:**
-```
-GET /api/tombstones/1
+```json
+{
+  "email": "ghost@timegrave.com",
+  "password": "eternal2024!"
+}
 ```
 
-**Response (200 OK - Locked):**
+**Response (200 OK):**
 ```json
 {
   "status": 200,
   "data": {
     "result": {
-      "id": 1,
-      "userId": 1,
-      "title": "모나리자",
-      "unlockDate": "2026-11-08",
-      "isUnlocked": false,
-      "daysRemaining": 365,
-      "createdAt": "2025-11-08T11:17:06Z",
-      "updatedAt": "2025-11-08T11:17:06Z"
+      "user": {
+        "id": 42,
+        "email": "ghost@timegrave.com",
+        "username": "영혼의수호자"
+      },
+      "sessionToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "expiresAt": "2025-11-27T14:30:00Z"
+    },
+    "message": "다시 돌아오신 것을 환영합니다."
+  }
+}
+```
+
+**Error Response (401 Unauthorized):**
+```json
+{
+  "status": 401,
+  "error": {
+    "code": "INVALID_CREDENTIALS",
+    "message": "이메일 또는 비밀번호가 올바르지 않습니다."
+  }
+}
+```
+
+#### POST /users/sign-out (로그아웃)
+
+**Request Headers:**
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (200 OK):**
+```json
+{
+  "status": 200,
+  "data": {
+    "message": "안전하게 로그아웃되었습니다. 다음에 또 만나요."
+  }
+}
+```
+
+#### DELETE /users (회원탈퇴)
+
+**Request Headers:**
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (200 OK):**
+```json
+{
+  "status": 200,
+  "data": {
+    "message": "계정이 영원히 삭제되었습니다. 모든 기억이 함께 사라집니다.",
+    "deletedGravesCount": 7
+  }
+}
+```
+
+#### GET /graves (묘지 대시보드 목록 조회)
+
+**Request Headers:**
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (200 OK):**
+```json
+{
+  "status": 200,
+  "data": {
+    "result": {
+      "graves": [
+        {
+          "id": 15,
+          "title": "2024년 여름의 약속",
+          "unlockDate": "2030-07-15",
+          "isLocked": true,
+          "daysRemaining": 1692,
+          "createdAt": "2025-11-20T10:00:00Z",
+          "preview": "그날의 햇살이 아직도..."
+        },
+        {
+          "id": 8,
+          "title": "할머니께 드리는 편지",
+          "unlockDate": "2024-12-25",
+          "isLocked": false,
+          "createdAt": "2023-12-25T00:00:00Z",
+          "preview": "할머니, 보고 싶어요..."
+        },
+        {
+          "id": 3,
+          "title": "첫 직장의 추억",
+          "unlockDate": "2026-03-01",
+          "isLocked": true,
+          "daysRemaining": 95,
+          "createdAt": "2025-01-15T09:30:00Z",
+          "preview": "떨리는 마음으로 출근했던..."
+        }
+      ],
+      "totalCount": 3,
+      "lockedCount": 2,
+      "unlockedCount": 1
     }
   }
 }
 ```
 
-**Response (200 OK - Unlocked):**
+**Response (200 OK - 빈 묘지):**
 ```json
 {
   "status": 200,
   "data": {
     "result": {
-      "id": 1,
-      "userId": 1,
-      "title": "모나리자",
-      "content": "루브르 박물관에서 본 모나리자의 미소",
-      "unlockDate": "2025-11-08",
-      "isUnlocked": true,
-      "createdAt": "2025-11-08T11:17:06Z",
-      "updatedAt": "2025-11-08T11:17:06Z"
+      "graves": [],
+      "totalCount": 0,
+      "lockedCount": 0,
+      "unlockedCount": 0
+    },
+    "message": "아직 묻힌 기억이 없습니다. 첫 번째 기억을 묻어보세요."
+  }
+}
+```
+
+#### POST /graves (묘지 생성)
+
+**Request Headers:**
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Request Body:**
+```json
+{
+  "title": "파리에서의 마지막 밤",
+  "content": "에펠탑 아래에서 마신 와인의 맛, 센강의 야경, 그리고 당신과 나눈 대화. 모든 것이 꿈만 같았어. 10년 후 이 기억을 다시 열어볼 때, 우리는 어떤 모습일까? 여전히 함께일까? 이 순간을 영원히 간직하고 싶어.",
+  "unlockDate": "2035-11-26",
+  "tags": ["여행", "파리", "추억"],
+  "mood": "nostalgic"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "status": 201,
+  "data": {
+    "result": {
+      "id": 24,
+      "title": "파리에서의 마지막 밤",
+      "unlockDate": "2035-11-26",
+      "isLocked": true,
+      "daysRemaining": 3652,
+      "createdAt": "2025-11-26T15:45:00Z",
+      "tags": ["여행", "파리", "추억"],
+      "mood": "nostalgic"
+    },
+    "message": "기억이 안전하게 봉인되었습니다. 3652일 후에 다시 만나요."
+  }
+}
+```
+
+**Error Response (400 Bad Request - 과거 날짜):**
+```json
+{
+  "status": 400,
+  "error": {
+    "code": "INVALID_UNLOCK_DATE",
+    "message": "잠금 해제 날짜는 미래여야 합니다.",
+    "field": "unlockDate"
+  }
+}
+```
+
+**Error Response (400 Bad Request - 필수 필드 누락):**
+```json
+{
+  "status": 400,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "필수 항목이 누락되었습니다.",
+    "fields": {
+      "title": "제목은 필수입니다.",
+      "content": "내용은 필수입니다."
+    }
+  }
+}
+```
+
+#### GET /graves/{id} (묘지 조회)
+
+**Request Headers:**
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response (200 OK - 잠긴 상태):**
+```json
+{
+  "status": 200,
+  "data": {
+    "result": {
+      "id": 24,
+      "title": "파리에서의 마지막 밤",
+      "unlockDate": "2035-11-26",
+      "isLocked": true,
+      "daysRemaining": 3652,
+      "createdAt": "2025-11-26T15:45:00Z",
+      "tags": ["여행", "파리", "추억"],
+      "mood": "nostalgic",
+      "preview": "에펠탑 아래에서 마신 와인의 맛...",
+      "lockMessage": "이 기억은 아직 봉인되어 있습니다. 3652일 후에 열립니다."
+    }
+  }
+}
+```
+
+**Response (200 OK - 열린 상태):**
+```json
+{
+  "status": 200,
+  "data": {
+    "result": {
+      "id": 8,
+      "title": "할머니께 드리는 편지",
+      "content": "할머니, 보고 싶어요. 할머니가 만들어주시던 김치찌개 맛이 그리워요. 할머니의 따뜻한 손길, 부드러운 목소리, 그리고 항상 저를 응원해주시던 그 미소. 모든 것이 그립습니다. 할머니 덕분에 제가 이렇게 성장할 수 있었어요. 감사합니다, 사랑합니다.",
+      "unlockDate": "2024-12-25",
+      "isLocked": false,
+      "unlockedAt": "2024-12-25T00:00:00Z",
+      "createdAt": "2023-12-25T00:00:00Z",
+      "tags": ["가족", "할머니", "감사"],
+      "mood": "grateful",
+      "unlockMessage": "봉인이 해제되었습니다. 과거의 당신이 남긴 메시지입니다."
     }
   }
 }
@@ -312,7 +485,19 @@ GET /api/tombstones/1
 {
   "status": 404,
   "error": {
-    "message": "Tombstone not found"
+    "code": "GRAVE_NOT_FOUND",
+    "message": "존재하지 않는 묘지입니다."
+  }
+}
+```
+
+**Error Response (403 Forbidden - 다른 사용자의 묘지):**
+```json
+{
+  "status": 403,
+  "error": {
+    "code": "ACCESS_DENIED",
+    "message": "이 묘지에 접근할 권한이 없습니다."
   }
 }
 ```
