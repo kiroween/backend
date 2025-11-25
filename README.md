@@ -13,6 +13,7 @@ TimeGrave는 사용자가 특정 날짜에 열리도록 설정된 디지털 타�
 - **ORM**: SQLAlchemy
 - **Validation**: Pydantic
 - **Scheduler**: APScheduler
+- **Package Manager**: uv (Rust 기반 초고속 패키지 관리자)
 - **Container**: Docker
 
 ## 시작하기
@@ -33,24 +34,43 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### 로컬 개발 환경
+### 로컬 개발 환경 (uv 사용)
+
+#### uv 설치
 
 ```bash
-# 가상환경 생성
-python -m venv venv
+# Mac/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 가상환경 활성화 (Mac/Linux)
-source venv/bin/activate
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-# 가상환경 활성화 (Windows)
-venv\Scripts\activate
+# 또는 pip로 설치
+pip install uv
+```
+
+#### 프로젝트 실행
+
+```bash
+# 가상환경 생성 및 의존성 설치
+uv venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
 # 의존성 설치
-pip install -r requirements.txt
+uv pip install -e .
+
+# 개발 의존성 포함 설치
+uv pip install -e ".[dev]"
 
 # 개발 서버 실행
 uvicorn app.main:app --reload
 ```
+
+#### uv의 장점
+
+- ⚡ **10-100배 빠른 속도**: Rust로 작성되어 pip보다 훨씬 빠름
+- 🔒 **자동 잠금 파일**: 재현 가능한 빌드 보장
+- 📦 **통합 도구**: 가상환경, 패키지 설치, 프로젝트 관리 통합
 
 ## API 엔드포인트
 
@@ -85,6 +105,22 @@ uvicorn app.main:app --reload
 
 ## 개발
 
+### 의존성 관리
+
+```bash
+# 새 패키지 추가
+uv pip install <package-name>
+
+# 개발 의존성 추가
+uv pip install --dev <package-name>
+
+# 의존성 업데이트
+uv pip install --upgrade <package-name>
+
+# 모든 의존성 동기화
+uv pip sync
+```
+
 ### 테스트 실행
 
 ```bash
@@ -96,6 +132,19 @@ pytest --cov=app
 
 # 특정 테스트 파일 실행
 pytest tests/test_tombstone.py
+```
+
+### 코드 품질
+
+```bash
+# Ruff로 린팅
+ruff check .
+
+# Ruff로 자동 수정
+ruff check --fix .
+
+# 포맷팅
+ruff format .
 ```
 
 ## 라이선스
