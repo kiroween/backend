@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Set up project structure and Docker environment
+- [x] 1. Set up project structure and Docker environment
   - Create project directory structure (app/routers, app/services, app/repositories, app/models, app/schemas)
   - Create requirements.txt with FastAPI, SQLAlchemy, Pydantic, APScheduler dependencies
   - Create Dockerfile for FastAPI application
@@ -8,15 +8,15 @@
   - Create .dockerignore and .gitignore files
   - _Requirements: All_
 
-- [ ] 2. Implement database layer with SQLAlchemy
-  - [ ] 2.1 Create database models and configuration
+- [x] 2. Implement database layer with SQLAlchemy
+  - [x] 2.1 Create database models and configuration
     - Create SQLAlchemy Tombstone model with all required fields
     - Set up database connection and session management
     - Create database initialization script
     - Configure SQLite database path
     - _Requirements: 1.1, 2.1, 3.1_
 
-  - [ ] 2.2 Implement Tombstone repository
+  - [x] 2.2 Implement Tombstone repository
     - Create repository class with CRUD methods
     - Implement get_all() method for listing tombstones
     - Implement get_by_id() method for retrieving single tombstone
@@ -28,22 +28,22 @@
     - **Property 1: Graveyard completeness**
     - **Validates: Requirements 1.1**
 
-- [ ] 3. Implement Pydantic schemas for request/response validation
-  - [ ] 3.1 Create Pydantic models
+- [x] 3. Implement Pydantic schemas for request/response validation
+  - [x] 3.1 Create Pydantic models
     - Create CreateTombstoneDto schema with field validation
     - Create TombstoneResponseDto schema
     - Create ApiSuccessResponse and ApiErrorResponse schemas
     - _Requirements: 2.1, 5.1, 5.2_
 
-- [ ] 4. Implement service layer with business logic
-  - [ ] 4.1 Create TombstoneService class
+- [x] 4. Implement service layer with business logic
+  - [x] 4.1 Create TombstoneService class
     - Implement list_tombstones() method with days remaining calculation
     - Implement create_tombstone() method with validation
     - Implement get_tombstone() method with content filtering
     - Implement check_and_unlock_tombstones() method for scheduler
     - _Requirements: 1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 4.1_
 
-  - [ ] 4.2 Implement date validation and utility functions
+  - [x] 4.2 Implement date validation and utility functions
     - Create function to validate unlock date is in the future
     - Create function to calculate days remaining until unlock date
     - _Requirements: 1.2, 2.2_
@@ -68,15 +68,15 @@
     - **Property 8: Required fields validation**
     - **Validates: Requirements 2.5**
 
-- [ ] 5. Implement FastAPI routers and endpoints
-  - [ ] 5.1 Create tombstone router
+- [x] 5. Implement FastAPI routers and endpoints
+  - [x] 5.1 Create tombstone router
     - Implement GET /api/graveyard endpoint
     - Implement POST /api/tombstones endpoint with Pydantic validation
     - Implement GET /api/tombstones/{id} endpoint
     - Add exception handlers for common errors
     - _Requirements: 1.1, 2.1, 3.1, 5.1, 5.2_
 
-  - [ ] 5.2 Implement response formatting utilities
+  - [x] 5.2 Implement response formatting utilities
     - Create success response formatter with status and data.result structure
     - Create error response formatter with status and error.message structure
     - Create user-friendly message generator for tombstone creation
@@ -88,8 +88,8 @@
     - **Property 18: Creation response message**
     - **Validates: Requirements 5.1, 5.2, 5.4**
 
-- [ ] 6. Implement content filtering logic
-  - [ ] 6.1 Add content filtering to get_tombstone method
+- [x] 6. Implement content filtering logic
+  - [x] 6.1 Add content filtering to get_tombstone method
     - Check tombstone unlock status
     - Include content field only if is_unlocked is True
     - Include days_remaining field only if is_unlocked is False
@@ -103,8 +103,8 @@
     - **Property 10: Locked content filtering**
     - **Validates: Requirements 3.2**
 
-- [ ] 7. Implement automatic unlock mechanism with APScheduler
-  - [ ] 7.1 Create unlock scheduler service
+- [x] 7. Implement automatic unlock mechanism with APScheduler
+  - [x] 7.1 Create unlock scheduler service
     - Set up APScheduler with cron trigger to run daily at midnight
     - Implement logic to find tombstones with unlock_date <= current date
     - Call service method to update is_unlocked status
@@ -122,22 +122,22 @@
     - **Property 14: Batch unlock**
     - **Validates: Requirements 4.3**
 
-- [ ] 8. Set up FastAPI application and configure middleware
-  - [ ] 8.1 Create main FastAPI application
+- [x] 8. Set up FastAPI application and configure middleware
+  - [x] 8.1 Create main FastAPI application
     - Configure CORS middleware
     - Include API routers with /api prefix
     - Add global exception handler
     - Configure startup and shutdown events
     - _Requirements: All_
 
-  - [ ] 8.2 Create application entry point
+  - [x] 8.2 Create application entry point
     - Initialize database tables on startup
     - Start APScheduler on startup
     - Configure uvicorn server settings
     - _Requirements: All_
 
 - [ ] 9. Configure Docker deployment
-  - [ ] 9.1 Finalize Dockerfile
+  - [x] 9.1 Finalize Dockerfile
     - Use Python 3.11 slim base image
     - Install dependencies from requirements.txt
     - Copy application code
@@ -145,14 +145,14 @@
     - Set CMD to run uvicorn
     - _Requirements: All_
 
-  - [ ] 9.2 Configure docker-compose
+  - [x] 9.2 Configure docker-compose
     - Define FastAPI service
     - Mount volume for SQLite database persistence
     - Configure environment variables
     - Set up port mapping (8000:8000)
     - _Requirements: All_
 
-- [ ] 10. Checkpoint - Ensure all tests pass
+- [x] 10. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ]* 11. Write integration tests for API endpoints
