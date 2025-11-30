@@ -37,6 +37,10 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plu
 # Docker 권한 설정
 sudo usermod -aG docker $USER
 
+# Docker 서비스 시작 및 활성화
+sudo systemctl start docker
+sudo systemctl enable docker
+
 # Git 설치
 echo "📚 Git 설치..."
 sudo apt-get install -y git

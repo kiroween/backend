@@ -47,12 +47,17 @@ cd timegrave-api
 # 환경변수 설정
 cd deploy
 cp .env.example .env
-nano .env  # 환경변수 수정
+nano .env  # 환경변수 수정 (DATABASE_URL, JWT_SECRET_KEY 등)
 
 # Docker 컨테이너 실행
+# ⚠️ 중요: deploy 폴더에서 실행해야 합니다
 chmod +x docker-run.sh
 ./docker-run.sh
 ```
+
+**주의사항:**
+- `docker-run.sh`는 반드시 `~/timegrave-api/deploy/` 폴더에서 실행해야 합니다
+- 스크립트가 자동으로 상위 폴더(프로젝트 루트)에서 Docker 빌드를 수행합니다
 
 ### 4. 확인
 

@@ -45,7 +45,7 @@ set -e
 REPO_URL="$REPO_URL"
 BRANCH="$BRANCH"
 
-cd ~/timegrave-api 2>/dev/null || cd ~
+cd ~
 
 # Git 저장소 업데이트 또는 클론
 if [ -d "timegrave-api/.git" ]; then
@@ -54,17 +54,24 @@ if [ -d "timegrave-api/.git" ]; then
     git fetch origin
     git reset --hard origin/\$BRANCH
     git pull origin \$BRANCH
-elif [ -d ".git" ]; then
-    echo "📥 코드 업데이트..."
-    git fetch origin
-    git reset --hard origin/\$BRANCH
-    git pull origin \$BRANCH
 else
     echo "📥 저장소 클론..."
-    cd ~
+    if [ -d "timegrave-api" ]; then
+        echo "⚠️  timegrave-api 폴더가 있지만 Git 저장소가 아닙니다. 삭제 후 재클론..."
+        rm -rf timegrave-api
+    fi
     git clone \$REPO_URL timegrave-api
     cd timegrave-api
 fi
+
+# 파일 확인
+echo "📂 저장소 내용 확인..."
+ls -la
+if [ ! -f "pyproject.toml" ]; then
+    echo "❌ pyproject.toml이 없습니다. 저장소 구조를 확인하세요."
+    exit 1
+fi
+echo "✅ 저장소 확인 완료"
 
 # 환경변수 파일 확인
 if [ ! -f "deploy/.env" ]; then
@@ -74,7 +81,7 @@ fi
 
 # Docker 컨테이너 재시작
 echo "🔄 컨테이너 재시작..."
-cd deploy
+cd ~/timegrave-api/deploy
 bash docker-run.sh
 
 # 헬스체크
