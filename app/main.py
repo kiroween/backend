@@ -10,6 +10,7 @@ import json
 
 from app.models.database import init_db
 from app.routers import tombstone_router
+from app.routers import user as user_router
 from app.services.scheduler import start_scheduler, stop_scheduler
 
 # Configure logging
@@ -46,6 +47,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(user_router.router)
 app.include_router(tombstone_router)
 
 

@@ -10,8 +10,12 @@ dependencies = [
     "sqlalchemy>=2.0.25",
     "pydantic>=2.5.3",
     "pydantic-settings>=2.1.0",
+    "pydantic[email]>=2.5.3",
     "apscheduler>=3.10.4",
     "python-dateutil>=2.8.2",
+    "python-jose[cryptography]>=3.3.0",
+    "bcrypt>=4.0.1",
+    "python-multipart>=0.0.6",
 ]
 
 [project.optional-dependencies]
