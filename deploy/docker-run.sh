@@ -71,7 +71,10 @@ sudo docker run -d \
     --restart unless-stopped \
     -p 80:8000 \
     --env-file "$SCRIPT_DIR/.env" \
+    -e TZ=Asia/Seoul \
     -v "$PROJECT_ROOT/data:/app/data" \
+    -v /etc/localtime:/etc/localtime:ro \
+    -v /etc/timezone:/etc/timezone:ro \
     timegrave-api:latest
 
 echo "✅ 컨테이너 실행 완료!"
