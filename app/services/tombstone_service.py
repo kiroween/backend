@@ -101,7 +101,9 @@ class TombstoneService:
                     
                     if audio_bytes:
                         # S3에 업로드
-                        file_name = f"tombstone_{tombstone.user_id}_{tombstone.id}_{datetime.utcnow().timestamp()}.mp3"
+                        from app.utils.datetime_utils import now_kst
+                        timestamp = now_kst().timestamp()
+                        file_name = f"tombstone_{tombstone.user_id}_{tombstone.id}_{timestamp}.mp3"
                         audio_url = self.s3_service.upload_audio(audio_bytes, file_name)
                         
                         if audio_url:
