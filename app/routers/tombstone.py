@@ -6,12 +6,12 @@ from app.models.database import get_db
 from app.services.tombstone_service import TombstoneService
 from app.schemas.tombstone import CreateTombstoneDto, TombstoneResponseDto
 
-router = APIRouter(prefix="/api", tags=["tombstones"])
+router = APIRouter(prefix="/api/graves", tags=["graves"])
 
 
-@router.get("/graves")
-def get_graveyard(db: Session = Depends(get_db)):
-    """Get all tombstones for the user (graveyard dashboard)"""
+@router.get("")
+def list_graves(db: Session = Depends(get_db)):
+    """Get all graves for the user"""
     try:
         service = TombstoneService(db)
         tombstones = service.list_tombstones(user_id=1)
@@ -29,9 +29,9 @@ def get_graveyard(db: Session = Depends(get_db)):
         )
 
 
-@router.post("/tombstones", status_code=status.HTTP_201_CREATED)
-def create_tombstone(data: CreateTombstoneDto, db: Session = Depends(get_db)):
-    """Create a new tombstone"""
+@router.post("", status_code=status.HTTP_201_CREATED)
+def create_grave(data: CreateTombstoneDto, db: Session = Depends(get_db)):
+    """Create a new grave"""
     try:
         service = TombstoneService(db)
         tombstone = service.create_tombstone(data)
@@ -57,17 +57,17 @@ def create_tombstone(data: CreateTombstoneDto, db: Session = Depends(get_db)):
         )
 
 
-@router.get("/tombstones/{tombstone_id}")
-def get_tombstone(tombstone_id: int, db: Session = Depends(get_db)):
-    """Get a specific tombstone by ID"""
+@router.get("/{grave_id}")
+def get_grave(grave_id: int, db: Session = Depends(get_db)):
+    """Get a specific grave by ID"""
     try:
         service = TombstoneService(db)
-        tombstone = service.get_tombstone(tombstone_id)
+        tombstone = service.get_tombstone(grave_id)
         
         if not tombstone:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"status": 404, "error": {"message": "Tombstone not found"}}
+                detail={"status": 404, "error": {"message": "Grave not found"}}
             )
         
         return {
