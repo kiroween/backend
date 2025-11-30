@@ -9,7 +9,7 @@ from app.schemas.tombstone import CreateTombstoneDto, TombstoneResponseDto
 router = APIRouter(prefix="/api", tags=["tombstones"])
 
 
-@router.get("/graveyard")
+@router.get("/graves")
 def get_graveyard(db: Session = Depends(get_db)):
     """Get all tombstones for the user (graveyard dashboard)"""
     try:

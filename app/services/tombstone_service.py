@@ -11,7 +11,7 @@ class TombstoneService:
         self.repository = TombstoneRepository(db)
 
     def list_tombstones(self, user_id: int = 1) -> List[TombstoneResponseDto]:
-        """List all tombstones for a user with days remaining calculation"""
+        """List all tombstones for a user - always shows only title, never content"""
         tombstones = self.repository.get_all(user_id)
         result = []
         
@@ -26,11 +26,12 @@ class TombstoneService:
                 "updated_at": tombstone.updated_at.isoformat()
             }
             
-            if tombstone.is_unlocked:
-                response_data["content"] = tombstone.content
-            else:
+            # Always calculate days_remaining for list view, regardless of unlock status
+            if not tombstone.is_unlocked:
                 days_remaining = (tombstone.unlock_date - date.today()).days
                 response_data["days_remaining"] = days_remaining
+            
+            # Never include content in list view
             
             result.append(TombstoneResponseDto(**response_data))
         
