@@ -21,7 +21,7 @@ docker rm timegrave-api 2>/dev/null || true
 
 # 이미지 빌드
 echo "🔨 Docker 이미지 빌드..."
-docker build -f Dockerfile.prod -t timegrave-api:latest .
+docker build -f ../Dockerfile.prod -t timegrave-api:latest .
 
 # 컨테이너 실행
 echo "🚀 컨테이너 실행..."
