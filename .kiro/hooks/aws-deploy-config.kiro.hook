@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Generate AWS Deploy Config",
+  "description": "Generates simple EC2 deployment configuration for the FastAPI project",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "이 FastAPI 프로젝트를 AWS EC2에 간단하게 배포하기 위한 설정을 생성해주세요:\n1. EC2 인스턴스에서 Docker 컨테이너 실행 스크립트 (docker run 방식)\n2. 필요한 환경변수 목록\n3. RDS PostgreSQL 연결 설정 (SQLite에서 마이그레이션)\n4. 기본 보안 그룹 설정 (포트 80, 443, 22)\n5. 간단한 배포 자동화 스크립트\n\nECR/ECS는 사용하지 않고, EC2에 직접 Docker를 설치하여 컨테이너를 실행하는 방식으로 진행해주세요. 현재 프로젝트 구조를 분석하여 최소한의 설정으로 배포할 수 있도록 제안해주세요."
+  }
+}

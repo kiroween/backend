@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Docker Build Test",
+  "description": "Automatically builds a Docker test image for timegrave-api whenever the Dockerfile is saved",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "Dockerfile"
+    ]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "docker build -t timegrave-api:test . --no-cache"
+  }
+}
