@@ -105,3 +105,29 @@ def get_grave(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"status": 500, "error": {"message": str(e)}}
         )
+
+
+@router.post("/unlock-check", status_code=status.HTTP_200_OK)
+def manual_unlock_check(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Manually trigger unlock check (for testing/admin)"""
+    try:
+        service = TombstoneService(db)
+        unlocked_count = service.check_and_unlock_tombstones()
+        
+        return {
+            "status": 200,
+            "data": {
+                "result": {
+                    "unlocked_count": unlocked_count,
+                    "message": f"{unlocked_count}개의 묘비가 잠금 해제되었습니다."
+                }
+            }
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"status": 500, "error": {"message": str(e)}}
+        )
