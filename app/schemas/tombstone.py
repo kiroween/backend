@@ -17,6 +17,7 @@ class TombstoneResponseDto(BaseModel):
     user_id: int
     title: str
     content: Optional[str] = None  # Only included if unlocked
+    audio_url: Optional[str] = None  # Only included if unlocked
     unlock_date: str
     is_unlocked: bool
     days_remaining: Optional[int] = None  # Only included if locked

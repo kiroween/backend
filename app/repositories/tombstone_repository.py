@@ -16,12 +16,13 @@ class TombstoneRepository:
         """Get a single tombstone by ID"""
         return self.db.query(Tombstone).filter(Tombstone.id == tombstone_id).first()
 
-    def create(self, user_id: int, title: str, content: str, unlock_date: date) -> Tombstone:
+    def create(self, user_id: int, title: str, content: str, unlock_date: date, audio_url: str = None) -> Tombstone:
         """Create a new tombstone"""
         tombstone = Tombstone(
             user_id=user_id,
             title=title,
             content=content,
+            audio_url=audio_url,
             unlock_date=unlock_date,
             is_unlocked=False
         )
@@ -38,3 +39,16 @@ class TombstoneRepository:
         ).update({"is_unlocked": True})
         self.db.commit()
         return result
+
+    def update_audio_url(self, tombstone_id: int, audio_url: str) -> bool:
+        """Update audio_url for a tombstone"""
+        try:
+            tombstone = self.get_by_id(tombstone_id)
+            if tombstone:
+                tombstone.audio_url = audio_url
+                self.db.commit()
+                return True
+            return False
+        except Exception:
+            self.db.rollback()
+            return False

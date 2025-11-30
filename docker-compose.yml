@@ -9,7 +9,8 @@ services:
     volumes:
       - ./app:/app/app
       - ./data:/app/data
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=sqlite:///./data/timegrave.db
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
