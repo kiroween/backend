@@ -32,9 +32,68 @@ class UnicodeJSONResponse(JSONResponse):
 
 app = FastAPI(
     title="TimeGrave API",
-    description="디지털 타임캡슐 관리 API",
+    description="""
+# TimeGrave API
+
+디지털 타임캡슐(묘비) 관리 API
+
+## 주요 기능
+
+- 🔐 **사용자 인증**: JWT 기반 회원가입/로그인
+- 📝 **묘비 관리**: 디지털 타임캡슐 생성 및 조회
+- 🔒 **자동 잠금 해제**: 설정한 날짜에 자동으로 잠금 해제
+- 🎙️ **TTS 음성 변환**: 잠금 해제 시 content를 음성으로 변환
+- ☁️ **클라우드 저장**: AWS S3에 음성 파일 저장
+
+## 인증 방식
+
+대부분의 API는 JWT Bearer 토큰 인증이 필요합니다.
+
+1. `/api/users/sign-in`으로 로그인
+2. 응답의 `session_token` 사용
+3. 요청 헤더에 추가: `Authorization: Bearer {session_token}`
+
+## 응답 형식
+
+### 성공 응답
+```json
+{
+  "status": 200,
+  "data": {
+    "result": { ... },
+    "message": "optional message"
+  }
+}
+```
+
+### 오류 응답
+```json
+{
+  "status": 400,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Error description"
+  }
+}
+```
+
+## 시간대
+
+모든 시간은 **한국 표준시(KST, UTC+9)** 기준입니다.
+
+## 버전
+
+v1.0.0
+    """,
     version="1.0.0",
-    default_response_class=UnicodeJSONResponse
+    default_response_class=UnicodeJSONResponse,
+    contact={
+        "name": "TimeGrave Team",
+        "email": "support@timegrave.com"
+    },
+    license_info={
+        "name": "MIT"
+    }
 )
 
 # CORS 설정
