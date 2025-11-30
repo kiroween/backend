@@ -9,8 +9,11 @@ services:
     volumes:
       - ./app:/app/app
       - ./data:/app/data
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     env_file:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
+      - TZ=Asia/Seoul
     restart: unless-stopped
