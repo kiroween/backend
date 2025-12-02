@@ -368,3 +368,293 @@ def manual_unlock_check(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"status": 500, "error": {"message": str(e)}}
         )
+
+
+
+@router.post(
+    "/{grave_id}/share",
+    summary="묘비 공유 링크 생성",
+    description="묘비를 친구에게 공유할 수 있는 링크를 생성합니다.",
+    response_description="공유 링크 정보",
+    responses={
+        200: {
+            "description": "성공",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": 200,
+                        "data": {
+                            "result": {
+                                "share_url": "https://timegrave.com/shared/abc123xyz",
+                                "share_token": "abc123xyz",
+                                "expires_at": None
+                            },
+                            "message": "공유 링크가 생성되었습니다. 친구에게 전달하세요!"
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "묘비를 찾을 수 없음"
+        },
+        403: {
+            "description": "권한 없음"
+        }
+    }
+)
+def create_share_link(
+    grave_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 묘비 공유 링크 생성
+    
+    친구에게 공유할 수 있는 링크를 생성합니다.
+    
+    ### 동작 방식
+    1. 고유한 share_token 생성
+    2. 공유 URL 반환
+    3. 친구가 링크를 통해 묘비 확인 가능
+    
+    ### 권한
+    - 본인의 묘비만 공유 가능
+    
+    ### 인증
+    - Bearer Token 필요
+    """
+    try:
+        service = TombstoneService(db)
+        share_token = service.generate_share_token(grave_id, current_user.id)
+        
+        if not share_token:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"status": 404, "error": {"message": "Grave not found"}}
+            )
+        
+        # TODO: 실제 프론트엔드 URL로 변경 필요
+        share_url = f"https://timegrave.com/shared/{share_token}"
+        
+        return {
+            "status": 200,
+            "data": {
+                "result": {
+                    "share_url": share_url,
+                    "share_token": share_token,
+                    "expires_at": None
+                },
+                "message": "공유 링크가 생성되었습니다. 친구에게 전달하세요!"
+            }
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"status": 403, "error": {"message": str(e)}}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"status": 500, "error": {"message": str(e)}}
+        )
+
+
+@router.get(
+    "/shared/{share_token}",
+    summary="공유된 묘비 조회",
+    description="공유 링크를 통해 묘비를 조회합니다. 회원가입이 필요합니다.",
+    response_description="공유된 묘비 정보",
+    responses={
+        200: {
+            "description": "성공",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": 200,
+                        "data": {
+                            "result": {
+                                "id": 1,
+                                "title": "나의 사랑하는 친구들에게",
+                                "content": "안녕, 미래의 나야...",
+                                "audio_url": "https://kiroween.s3.ap-northeast-2.amazonaws.com/tombstone_1.mp3",
+                                "unlock_date": "2025-12-01",
+                                "is_unlocked": True,
+                                "created_at": "2025-11-01T10:00:00",
+                                "author_username": "홍길동"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "유효하지 않은 공유 링크"
+        },
+        403: {
+            "description": "아직 잠금 해제되지 않은 묘비"
+        }
+    }
+)
+def view_shared_grave(
+    share_token: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 공유된 묘비 조회
+    
+    친구가 공유 링크를 통해 묘비를 확인합니다.
+    
+    ### 동작 방식
+    1. 회원가입/로그인 필수
+    2. share_token으로 묘비 조회
+    3. 잠금 해제된 묘비만 조회 가능
+    
+    ### 제약사항
+    - 잠금 해제된 묘비만 공유 가능
+    - 회원가입 필수
+    
+    ### 인증
+    - Bearer Token 필요
+    """
+    try:
+        service = TombstoneService(db)
+        tombstone = service.get_tombstone_by_share_token(share_token)
+        
+        if not tombstone:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"status": 404, "error": {"message": "유효하지 않은 공유 링크입니다."}}
+            )
+        
+        if not tombstone.is_unlocked:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"status": 403, "error": {"message": "아직 잠금 해제되지 않은 묘비입니다."}}
+            )
+        
+        # Get author username
+        from app.models.user import User as UserModel
+        author = db.query(UserModel).filter(UserModel.id == tombstone.user_id).first()
+        author_username = author.username if author else "Unknown"
+        
+        return {
+            "status": 200,
+            "data": {
+                "result": {
+                    "id": tombstone.id,
+                    "title": tombstone.title,
+                    "content": tombstone.content,
+                    "audio_url": tombstone.audio_url,
+                    "unlock_date": tombstone.unlock_date.isoformat(),
+                    "is_unlocked": tombstone.is_unlocked,
+                    "created_at": tombstone.created_at.isoformat(),
+                    "author_username": author_username
+                }
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"status": 500, "error": {"message": str(e)}}
+        )
+
+
+@router.post(
+    "/shared/{share_token}/copy",
+    status_code=status.HTTP_201_CREATED,
+    summary="공유된 묘비를 내 계정에 저장",
+    description="친구가 공유한 묘비를 내 계정에 복사합니다.",
+    response_description="복사된 묘비 정보",
+    responses={
+        201: {
+            "description": "성공",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": 201,
+                        "data": {
+                            "result": {
+                                "id": 5,
+                                "user_id": 2,
+                                "title": "[공유받음] 나의 사랑하는 친구들에게",
+                                "content": "안녕, 미래의 나야...",
+                                "audio_url": "https://kiroween.s3.ap-northeast-2.amazonaws.com/tombstone_1.mp3",
+                                "unlock_date": "2025-12-01",
+                                "is_unlocked": True,
+                                "created_at": "2025-12-02T15:30:00",
+                                "updated_at": "2025-12-02T15:30:00"
+                            },
+                            "message": "친구의 묘비가 내 계정에 저장되었습니다."
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "유효하지 않은 공유 링크"
+        },
+        403: {
+            "description": "아직 잠금 해제되지 않은 묘비"
+        }
+    }
+)
+def copy_shared_grave(
+    share_token: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 공유된 묘비 복사
+    
+    친구가 공유한 묘비를 내 계정에 저장합니다.
+    
+    ### 동작 방식
+    1. share_token으로 원본 묘비 조회
+    2. 내 계정에 복사본 생성
+    3. 제목에 "[공유받음]" 접두사 추가
+    4. 동일한 audio_url 재사용
+    
+    ### 제약사항
+    - 잠금 해제된 묘비만 복사 가능
+    - 회원가입 필수
+    
+    ### 인증
+    - Bearer Token 필요
+    """
+    try:
+        service = TombstoneService(db)
+        copied_tombstone = service.copy_shared_tombstone(share_token, current_user.id)
+        
+        return {
+            "status": 201,
+            "data": {
+                "result": copied_tombstone.model_dump(exclude_none=True),
+                "message": "친구의 묘비가 내 계정에 저장되었습니다."
+            }
+        }
+    except ValueError as e:
+        error_msg = str(e)
+        if "Invalid share token" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"status": 404, "error": {"message": "유효하지 않은 공유 링크입니다."}}
+            )
+        elif "not yet unlocked" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"status": 403, "error": {"message": error_msg}}
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"status": 400, "error": {"message": error_msg}}
+            )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"status": 500, "error": {"message": str(e)}}
+        )

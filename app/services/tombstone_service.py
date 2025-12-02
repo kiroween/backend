@@ -134,3 +134,64 @@ class TombstoneService:
         """Check and unlock tombstones whose unlock date has arrived"""
         current_date = date.today()
         return self.repository.update_unlock_status(current_date)
+
+    def generate_share_token(self, tombstone_id: int, user_id: int) -> Optional[str]:
+        """Generate a share token for a tombstone"""
+        import secrets
+        
+        tombstone = self.repository.get_by_id(tombstone_id)
+        
+        if not tombstone:
+            return None
+        
+        # Check ownership
+        if tombstone.user_id != user_id:
+            raise ValueError("You don't have permission to share this tombstone")
+        
+        # Generate unique token
+        share_token = secrets.token_urlsafe(16)
+        
+        # Update tombstone with share token
+        self.repository.update_share_token(tombstone_id, share_token)
+        
+        return share_token
+    
+    def get_tombstone_by_share_token(self, share_token: str) -> Optional[Tombstone]:
+        """Get tombstone by share token"""
+        return self.repository.get_by_share_token(share_token)
+    
+    def copy_shared_tombstone(self, share_token: str, new_user_id: int) -> TombstoneResponseDto:
+        """Copy a shared tombstone to another user's account"""
+        # Get original tombstone
+        original = self.repository.get_by_share_token(share_token)
+        
+        if not original:
+            raise ValueError("Invalid share token")
+        
+        # Check if already unlocked
+        if not original.is_unlocked:
+            raise ValueError("This tombstone is not yet unlocked and cannot be shared")
+        
+        # Create a copy for the new user
+        copied_tombstone = self.repository.create(
+            user_id=new_user_id,
+            title=f"[공유받음] {original.title}",
+            content=original.content,
+            audio_url=original.audio_url,  # Reuse the same audio URL
+            unlock_date=original.unlock_date
+        )
+        
+        # Mark as unlocked since it's a copy of an unlocked tombstone
+        self.repository.update_unlock_status_by_id(copied_tombstone.id, True)
+        
+        return TombstoneResponseDto(
+            id=copied_tombstone.id,
+            user_id=copied_tombstone.user_id,
+            title=copied_tombstone.title,
+            content=copied_tombstone.content,
+            audio_url=copied_tombstone.audio_url,
+            unlock_date=copied_tombstone.unlock_date.isoformat(),
+            is_unlocked=True,
+            created_at=copied_tombstone.created_at.isoformat(),
+            updated_at=copied_tombstone.updated_at.isoformat()
+        )

@@ -81,6 +81,7 @@ uvicorn app.main:app --reload
 - 🎙️ **TTS 음성 변환**: 잠금 해제된 타임캡슐 조회 시 자동으로 음성 생성
 - ☁️ **클라우드 저장**: AWS S3에 음성 파일 안전하게 저장 및 재사용
 - 🔐 **사용자 인증**: JWT 기반 인증 시스템
+- 🔗 **친구 공유**: 타임캡슐을 친구에게 공유하고 복사할 수 있는 기능
 
 ## API 엔드포인트
 
@@ -91,9 +92,15 @@ uvicorn app.main:app --reload
 
 ### 주요 엔드포인트
 
+#### 타임캡슐 관리
 - `GET /api/graves` - 모든 타임캡슐 목록 조회
 - `POST /api/graves` - 새로운 타임캡슐 생성
 - `GET /api/graves/{id}` - 특정 타임캡슐 조회 (잠금 해제 시 TTS 자동 생성 및 음성 URL 제공)
+
+#### 친구 공유 기능
+- `POST /api/graves/{id}/share` - 공유 링크 생성
+- `GET /api/graves/shared/{share_token}` - 공유된 타임캡슐 조회 (회원가입 필수)
+- `POST /api/graves/shared/{share_token}/copy` - 공유된 타임캡슐을 내 계정에 저장
 
 ## 환경 설정
 

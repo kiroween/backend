@@ -33,6 +33,7 @@ class TombstoneResponseDto(BaseModel):
     unlock_date: str = Field(..., description="잠금 해제 날짜 (ISO 8601)")
     is_unlocked: bool = Field(..., description="잠금 해제 여부")
     days_remaining: Optional[int] = Field(None, description="잠금 해제까지 남은 일수 (잠금 상태인 경우에만 포함)")
+    share_token: Optional[str] = Field(None, description="공유 링크 토큰")
     created_at: str = Field(..., description="생성 시간 (ISO 8601, KST)")
     updated_at: str = Field(..., description="수정 시간 (ISO 8601, KST)")
 
@@ -64,3 +65,49 @@ class ApiSuccessResponse(BaseModel, Generic[T]):
 class ApiErrorResponse(BaseModel):
     status: int
     error: dict  # Contains 'message'
+
+
+class ShareTombstoneResponseDto(BaseModel):
+    share_url: str = Field(..., description="공유 링크 URL")
+    share_token: str = Field(..., description="공유 토큰")
+    expires_at: Optional[str] = Field(None, description="만료 시간 (현재는 무제한)")
+    
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "share_url": "https://timegrave.com/shared/abc123xyz",
+                    "share_token": "abc123xyz",
+                    "expires_at": None
+                }
+            ]
+        }
+    }
+
+
+class SharedTombstoneViewDto(BaseModel):
+    id: int = Field(..., description="묘비 ID")
+    title: str = Field(..., description="묘비 제목")
+    content: str = Field(..., description="묘비 내용")
+    audio_url: Optional[str] = Field(None, description="TTS 음성 파일 S3 URL")
+    unlock_date: str = Field(..., description="잠금 해제 날짜")
+    is_unlocked: bool = Field(..., description="잠금 해제 여부")
+    created_at: str = Field(..., description="생성 시간")
+    author_username: str = Field(..., description="작성자 이름")
+    
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "id": 1,
+                    "title": "나의 사랑하는 친구들에게",
+                    "content": "안녕, 미래의 나야...",
+                    "audio_url": "https://kiroween.s3.ap-northeast-2.amazonaws.com/tombstone_1.mp3",
+                    "unlock_date": "2025-12-01",
+                    "is_unlocked": True,
+                    "created_at": "2025-11-01T10:00:00",
+                    "author_username": "홍길동"
+                }
+            ]
+        }
+    }

@@ -52,3 +52,33 @@ class TombstoneRepository:
         except Exception:
             self.db.rollback()
             return False
+
+    def update_share_token(self, tombstone_id: int, share_token: str) -> bool:
+        """Update share token for a tombstone"""
+        try:
+            tombstone = self.get_by_id(tombstone_id)
+            if tombstone:
+                tombstone.share_token = share_token
+                self.db.commit()
+                return True
+            return False
+        except Exception:
+            self.db.rollback()
+            return False
+    
+    def get_by_share_token(self, share_token: str) -> Optional[Tombstone]:
+        """Get a tombstone by share token"""
+        return self.db.query(Tombstone).filter(Tombstone.share_token == share_token).first()
+    
+    def update_unlock_status_by_id(self, tombstone_id: int, is_unlocked: bool) -> bool:
+        """Update unlock status for a specific tombstone"""
+        try:
+            tombstone = self.get_by_id(tombstone_id)
+            if tombstone:
+                tombstone.is_unlocked = is_unlocked
+                self.db.commit()
+                return True
+            return False
+        except Exception:
+            self.db.rollback()
+            return False

@@ -338,6 +338,153 @@ Authorization: Bearer {token}
 
 ---
 
+### 3. 묘비 공유 기능
+
+#### 3.1 공유 링크 생성
+
+```http
+POST /api/graves/{grave_id}/share
+Authorization: Bearer {token}
+```
+
+**응답 예시 (200):**
+```json
+{
+  "status": 200,
+  "data": {
+    "result": {
+      "share_url": "https://timegrave.com/shared/abc123xyz",
+      "share_token": "abc123xyz",
+      "expires_at": null
+    },
+    "message": "공유 링크가 생성되었습니다. 친구에게 전달하세요!"
+  }
+}
+```
+
+**오류 응답 (403):**
+```json
+{
+  "status": 403,
+  "error": {
+    "message": "You don't have permission to share this tombstone"
+  }
+}
+```
+
+**특징:**
+- 본인의 묘비만 공유 가능
+- 고유한 share_token 생성
+- 링크는 무제한 유효 (expires_at: null)
+
+#### 3.2 공유된 묘비 조회
+
+```http
+GET /api/graves/shared/{share_token}
+Authorization: Bearer {token}
+```
+
+**응답 예시 (200):**
+```json
+{
+  "status": 200,
+  "data": {
+    "result": {
+      "id": 1,
+      "title": "나의 사랑하는 친구들에게",
+      "content": "안녕, 미래의 나야...",
+      "audio_url": "https://kiroween.s3.ap-northeast-2.amazonaws.com/tombstone_1.mp3",
+      "unlock_date": "2025-12-01",
+      "is_unlocked": true,
+      "created_at": "2025-11-01T10:00:00",
+      "author_username": "홍길동"
+    }
+  }
+}
+```
+
+**오류 응답 (404):**
+```json
+{
+  "status": 404,
+  "error": {
+    "message": "유효하지 않은 공유 링크입니다."
+  }
+}
+```
+
+**오류 응답 (403):**
+```json
+{
+  "status": 403,
+  "error": {
+    "message": "아직 잠금 해제되지 않은 묘비입니다."
+  }
+}
+```
+
+**특징:**
+- 회원가입/로그인 필수
+- 잠금 해제된 묘비만 조회 가능
+- 작성자 이름 포함
+
+#### 3.3 공유된 묘비를 내 계정에 저장
+
+```http
+POST /api/graves/shared/{share_token}/copy
+Authorization: Bearer {token}
+```
+
+**응답 예시 (201):**
+```json
+{
+  "status": 201,
+  "data": {
+    "result": {
+      "id": 5,
+      "user_id": 2,
+      "title": "[공유받음] 나의 사랑하는 친구들에게",
+      "content": "안녕, 미래의 나야...",
+      "audio_url": "https://kiroween.s3.ap-northeast-2.amazonaws.com/tombstone_1.mp3",
+      "unlock_date": "2025-12-01",
+      "is_unlocked": true,
+      "created_at": "2025-12-02T15:30:00",
+      "updated_at": "2025-12-02T15:30:00"
+    },
+    "message": "친구의 묘비가 내 계정에 저장되었습니다."
+  }
+}
+```
+
+**오류 응답 (404):**
+```json
+{
+  "status": 404,
+  "error": {
+    "message": "유효하지 않은 공유 링크입니다."
+  }
+}
+```
+
+**오류 응답 (403):**
+```json
+{
+  "status": 403,
+  "error": {
+    "message": "This tombstone is not yet unlocked and cannot be shared"
+  }
+}
+```
+
+**특징:**
+- 회원가입/로그인 필수
+- 잠금 해제된 묘비만 복사 가능
+- 제목에 "[공유받음]" 접두사 자동 추가
+- 동일한 audio_url 재사용 (중복 생성 방지)
+- 복사본은 자동으로 잠금 해제 상태
+
+---
+
 ## 자동 잠금 해제
 
 ### 스케줄러
