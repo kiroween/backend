@@ -16,7 +16,7 @@ class TombstoneRepository:
         """Get a single tombstone by ID"""
         return self.db.query(Tombstone).filter(Tombstone.id == tombstone_id).first()
 
-    def create(self, user_id: int, title: str, content: str, unlock_date: date, audio_url: str = None) -> Tombstone:
+    def create(self, user_id: int, title: str, content: str, unlock_date: date, audio_url: str = None, enroll: int = None, share: str = None) -> Tombstone:
         """Create a new tombstone"""
         tombstone = Tombstone(
             user_id=user_id,
@@ -24,7 +24,9 @@ class TombstoneRepository:
             content=content,
             audio_url=audio_url,
             unlock_date=unlock_date,
-            is_unlocked=False
+            is_unlocked=False,
+            enroll=enroll,
+            share=share
         )
         self.db.add(tombstone)
         self.db.commit()
@@ -82,3 +84,33 @@ class TombstoneRepository:
         except Exception:
             self.db.rollback()
             return False
+    
+    def update_share_list(self, tombstone_id: int, share_json: str) -> bool:
+        """Update share list for a tombstone"""
+        try:
+            tombstone = self.get_by_id(tombstone_id)
+            if tombstone:
+                tombstone.share = share_json
+                self.db.commit()
+                return True
+            return False
+        except Exception:
+            self.db.rollback()
+            return False
+    
+    def update_invite_token(self, tombstone_id: int, invite_token: str) -> bool:
+        """Update invite token for a tombstone"""
+        try:
+            tombstone = self.get_by_id(tombstone_id)
+            if tombstone:
+                tombstone.invite_token = invite_token
+                self.db.commit()
+                return True
+            return False
+        except Exception:
+            self.db.rollback()
+            return False
+    
+    def get_by_invite_token(self, invite_token: str) -> Optional[Tombstone]:
+        """Get a tombstone by invite token"""
+        return self.db.query(Tombstone).filter(Tombstone.invite_token == invite_token).first()

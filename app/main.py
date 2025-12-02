@@ -12,6 +12,7 @@ from app.models.database import init_db
 from app.routers import tombstone_router
 from app.routers import user as user_router
 from app.services.scheduler import start_scheduler, stop_scheduler
+from app.utils.migration import run_migrations, check_migration_status
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -158,8 +159,17 @@ async def root():
 async def startup_event():
     """Initialize database and scheduler on startup"""
     logger.info("🚀 TimeGrave API starting up...")
+    
+    # Initialize database
     init_db()
     logger.info("✅ Database initialized")
+    
+    # Run migrations
+    logger.info("🔧 Running database migrations...")
+    run_migrations()
+    check_migration_status()
+    
+    # Start scheduler
     start_scheduler()
     logger.info("✅ Scheduler started")
 

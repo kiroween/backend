@@ -21,6 +21,9 @@ class Tombstone(Base):
     audio_url = Column(String(500), nullable=True)  # S3 오디오 파일 URL
     unlock_date = Column(Date, nullable=False, index=True)
     is_unlocked = Column(Boolean, default=False, index=True)
-    share_token = Column(String(100), nullable=True, unique=True, index=True)  # 공유 링크용 토큰
+    share_token = Column(String(100), nullable=True, unique=True, index=True)  # 공유 링크용 토큰 (읽기 전용)
+    invite_token = Column(String(100), nullable=True, unique=True, index=True)  # 초대 링크용 토큰 (쓰기 권한)
+    enroll = Column(Integer, nullable=True, index=True)  # 작성자 (본인 또는 친구 userId)
+    share = Column(Text, nullable=True)  # 쓰기 권한 있는 친구들 (JSON array of userIds)
     created_at = Column(DateTime, default=get_kst_now, nullable=False)
     updated_at = Column(DateTime, default=get_kst_now, onupdate=get_kst_now, nullable=False)

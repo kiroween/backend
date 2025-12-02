@@ -5,7 +5,7 @@ from typing import List
 from app.models.database import get_db
 from app.models.user import User
 from app.services.tombstone_service import TombstoneService
-from app.schemas.tombstone import CreateTombstoneDto, TombstoneResponseDto
+from app.schemas.tombstone import CreateTombstoneDto, TombstoneResponseDto, UpdateShareDto, InviteLinkResponseDto
 from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/api/graves", tags=["graves"])
@@ -644,6 +644,274 @@ def copy_shared_grave(
                 detail={"status": 404, "error": {"message": "유효하지 않은 공유 링크입니다."}}
             )
         elif "not yet unlocked" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"status": 403, "error": {"message": error_msg}}
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"status": 400, "error": {"message": error_msg}}
+            )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"status": 500, "error": {"message": str(e)}}
+        )
+
+
+@router.post(
+    "/{grave_id}/invite",
+    summary="묘비 초대 링크 생성",
+    description="친구를 초대할 수 있는 링크를 생성합니다. 링크를 통해 가입한 친구는 자동으로 쓰기 권한을 받습니다.",
+    response_description="초대 링크 정보",
+    responses={
+        200: {
+            "description": "성공",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": 200,
+                        "data": {
+                            "result": {
+                                "invite_url": "https://timegrave.com/invite/abc123-xyz-456",
+                                "invite_token": "abc123-xyz-456",
+                                "message": "친구들에게 이 링크를 공유하세요. 링크를 통해 가입한 친구는 자동으로 쓰기 권한을 받습니다."
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "묘비를 찾을 수 없음"
+        },
+        403: {
+            "description": "권한 없음"
+        }
+    }
+)
+def create_invite_link(
+    grave_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 묘비 초대 링크 생성
+    
+    친구를 초대할 수 있는 링크를 생성합니다.
+    
+    ### 동작 방식
+    1. 고유한 invite_token (UUID) 생성
+    2. 초대 URL 반환
+    3. 친구가 링크를 통해 회원가입/로그인
+    4. 초대 수락 시 자동으로 share 배열에 추가
+    
+    ### 특징
+    - 가입 전에도 링크 공유 가능
+    - 여러 친구가 같은 링크로 참여 가능
+    - share_token(읽기용)과 invite_token(쓰기용) 분리
+    
+    ### 권한
+    - 본인의 묘비만 초대 링크 생성 가능
+    
+    ### 인증
+    - Bearer Token 필요
+    """
+    try:
+        service = TombstoneService(db)
+        invite_token = service.generate_invite_token(grave_id, current_user.id)
+        
+        if not invite_token:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"status": 404, "error": {"message": "Grave not found"}}
+            )
+        
+        # TODO: 실제 프론트엔드 URL로 변경 필요
+        invite_url = f"https://timegrave.com/invite/{invite_token}"
+        
+        return {
+            "status": 200,
+            "data": {
+                "result": {
+                    "invite_url": invite_url,
+                    "invite_token": invite_token,
+                    "message": "친구들에게 이 링크를 공유하세요. 링크를 통해 가입한 친구는 자동으로 쓰기 권한을 받습니다."
+                }
+            }
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"status": 403, "error": {"message": str(e)}}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"status": 500, "error": {"message": str(e)}}
+        )
+
+
+@router.post(
+    "/invite/{invite_token}/accept",
+    summary="초대 수락",
+    description="초대 링크를 통해 묘비 쓰기 권한을 받습니다.",
+    response_description="업데이트된 묘비 정보",
+    responses={
+        200: {
+            "description": "성공",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": 200,
+                        "data": {
+                            "result": {
+                                "id": 1,
+                                "user_id": 1,
+                                "title": "우리의 추억",
+                                "unlock_date": "2026-12-01",
+                                "is_unlocked": False,
+                                "share": [2, 3],
+                                "created_at": "2025-12-02T10:00:00",
+                                "updated_at": "2025-12-02T10:00:00"
+                            },
+                            "message": "초대를 수락했습니다. 이제 이 묘비에 함께 쓸 수 있습니다."
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "유효하지 않은 초대 링크"
+        }
+    }
+)
+def accept_invite(
+    invite_token: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 초대 수락
+    
+    초대 링크를 통해 묘비 쓰기 권한을 받습니다.
+    
+    ### 동작 방식
+    1. 회원가입/로그인 필수
+    2. invite_token으로 묘비 조회
+    3. 자동으로 share 배열에 본인 userId 추가
+    4. 이미 추가된 경우 중복 추가 안 됨
+    
+    ### 인증
+    - Bearer Token 필요
+    """
+    try:
+        service = TombstoneService(db)
+        tombstone = service.accept_invite(invite_token, current_user.id)
+        
+        return {
+            "status": 200,
+            "data": {
+                "result": tombstone.model_dump(exclude_none=True),
+                "message": "초대를 수락했습니다. 이제 이 묘비에 함께 쓸 수 있습니다."
+            }
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"status": 404, "error": {"message": str(e)}}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"status": 500, "error": {"message": str(e)}}
+        )
+
+
+@router.patch(
+    "/{grave_id}/share",
+    summary="묘비 쓰기 권한 관리 (수동)",
+    description="이미 가입한 친구를 묘비 쓰기 권한 목록에 추가하거나 제거합니다.",
+    response_description="업데이트된 묘비 정보",
+    responses={
+        200: {
+            "description": "성공",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": 200,
+                        "data": {
+                            "result": {
+                                "id": 1,
+                                "user_id": 1,
+                                "title": "나의 사랑하는 친구들에게",
+                                "unlock_date": "2026-12-01",
+                                "is_unlocked": False,
+                                "share": [2, 3],
+                                "created_at": "2025-12-01T10:00:00",
+                                "updated_at": "2025-12-01T10:00:00"
+                            },
+                            "message": "쓰기 권한이 업데이트되었습니다."
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "묘비를 찾을 수 없음"
+        },
+        403: {
+            "description": "권한 없음"
+        }
+    }
+)
+def update_share_permissions(
+    grave_id: int,
+    data: UpdateShareDto,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 묘비 쓰기 권한 관리
+    
+    친구를 묘비 쓰기 권한 목록에 추가하거나 제거합니다.
+    
+    ### 동작 방식
+    1. 묘비 주인만 권한 수정 가능
+    2. action: "add" - 친구 추가
+    3. action: "remove" - 친구 제거
+    
+    ### 권한
+    - 본인의 묘비만 수정 가능
+    
+    ### 인증
+    - Bearer Token 필요
+    """
+    try:
+        service = TombstoneService(db)
+        tombstone = service.update_share_list(
+            tombstone_id=grave_id,
+            user_id=current_user.id,
+            action=data.action,
+            target_user_id=data.user_id
+        )
+        
+        return {
+            "status": 200,
+            "data": {
+                "result": tombstone.model_dump(exclude_none=True),
+                "message": "쓰기 권한이 업데이트되었습니다."
+            }
+        }
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"status": 404, "error": {"message": error_msg}}
+            )
+        elif "permission" in error_msg:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail={"status": 403, "error": {"message": error_msg}}

@@ -19,16 +19,28 @@ class TombstoneService:
 
     def list_tombstones(self, user_id: int = 1) -> List[TombstoneResponseDto]:
         """List all tombstones for a user - always shows only title, never content"""
+        import json
+        
         tombstones = self.repository.get_all(user_id)
         result = []
         
         for tombstone in tombstones:
+            # Parse share list
+            share_list = None
+            if tombstone.share:
+                try:
+                    share_list = json.loads(tombstone.share)
+                except:
+                    share_list = None
+            
             response_data = {
                 "id": tombstone.id,
                 "user_id": tombstone.user_id,
                 "title": tombstone.title,
                 "unlock_date": tombstone.unlock_date.isoformat(),
                 "is_unlocked": tombstone.is_unlocked,
+                "enroll": tombstone.enroll,
+                "share": share_list,
                 "created_at": tombstone.created_at.isoformat(),
                 "updated_at": tombstone.updated_at.isoformat()
             }
@@ -46,9 +58,19 @@ class TombstoneService:
 
     def create_tombstone(self, data: CreateTombstoneDto) -> TombstoneResponseDto:
         """Create a new tombstone with validation"""
+        import json
+        
         # Validate unlock date is in the future
         if data.unlock_date <= date.today():
             raise ValueError("Unlock date must be in the future")
+        
+        # Set enroll to current user if not specified
+        enroll = data.enroll if data.enroll else data.user_id
+        
+        # Convert share list to JSON string
+        share_json = None
+        if data.share:
+            share_json = json.dumps(data.share)
         
         # 묘비 생성 시에는 TTS를 생성하지 않음 (조회 시 생성)
         tombstone = self.repository.create(
@@ -56,10 +78,20 @@ class TombstoneService:
             title=data.title,
             content=data.content,
             audio_url=None,
-            unlock_date=data.unlock_date
+            unlock_date=data.unlock_date,
+            enroll=enroll,
+            share=share_json
         )
         
         days_remaining = (tombstone.unlock_date - date.today()).days
+        
+        # Parse share for response
+        share_list = None
+        if tombstone.share:
+            try:
+                share_list = json.loads(tombstone.share)
+            except:
+                share_list = None
         
         return TombstoneResponseDto(
             id=tombstone.id,
@@ -68,16 +100,28 @@ class TombstoneService:
             unlock_date=tombstone.unlock_date.isoformat(),
             is_unlocked=tombstone.is_unlocked,
             days_remaining=days_remaining,
+            enroll=tombstone.enroll,
+            share=share_list,
             created_at=tombstone.created_at.isoformat(),
             updated_at=tombstone.updated_at.isoformat()
         )
 
     def get_tombstone(self, tombstone_id: int) -> Optional[TombstoneResponseDto]:
         """Get a single tombstone with content filtering based on unlock status"""
+        import json
+        
         tombstone = self.repository.get_by_id(tombstone_id)
         
         if not tombstone:
             return None
+        
+        # Parse share list
+        share_list = None
+        if tombstone.share:
+            try:
+                share_list = json.loads(tombstone.share)
+            except:
+                share_list = None
         
         response_data = {
             "id": tombstone.id,
@@ -85,6 +129,8 @@ class TombstoneService:
             "title": tombstone.title,
             "unlock_date": tombstone.unlock_date.isoformat(),
             "is_unlocked": tombstone.is_unlocked,
+            "enroll": tombstone.enroll,
+            "share": share_list,
             "created_at": tombstone.created_at.isoformat(),
             "updated_at": tombstone.updated_at.isoformat()
         }
@@ -195,3 +241,88 @@ class TombstoneService:
             created_at=copied_tombstone.created_at.isoformat(),
             updated_at=copied_tombstone.updated_at.isoformat()
         )
+    
+    def update_share_list(self, tombstone_id: int, user_id: int, action: str, target_user_id: int) -> TombstoneResponseDto:
+        """Add or remove a user from the share list"""
+        import json
+        
+        tombstone = self.repository.get_by_id(tombstone_id)
+        
+        if not tombstone:
+            raise ValueError("Tombstone not found")
+        
+        # Check ownership
+        if tombstone.user_id != user_id:
+            raise ValueError("You don't have permission to modify this tombstone")
+        
+        # Parse current share list
+        current_share = []
+        if tombstone.share:
+            try:
+                current_share = json.loads(tombstone.share)
+            except:
+                current_share = []
+        
+        # Update share list
+        if action == "add":
+            if target_user_id not in current_share:
+                current_share.append(target_user_id)
+        elif action == "remove":
+            if target_user_id in current_share:
+                current_share.remove(target_user_id)
+        else:
+            raise ValueError("Invalid action. Use 'add' or 'remove'")
+        
+        # Save updated share list
+        share_json = json.dumps(current_share)
+        self.repository.update_share_list(tombstone_id, share_json)
+        
+        # Return updated tombstone
+        return self.get_tombstone(tombstone_id)
+    
+    def generate_invite_token(self, tombstone_id: int, user_id: int) -> Optional[str]:
+        """Generate an invite token for a tombstone"""
+        import uuid
+        
+        tombstone = self.repository.get_by_id(tombstone_id)
+        
+        if not tombstone:
+            return None
+        
+        # Check ownership
+        if tombstone.user_id != user_id:
+            raise ValueError("You don't have permission to create invite link for this tombstone")
+        
+        # Generate unique UUID token
+        invite_token = str(uuid.uuid4())
+        
+        # Update tombstone with invite token
+        self.repository.update_invite_token(tombstone_id, invite_token)
+        
+        return invite_token
+    
+    def accept_invite(self, invite_token: str, user_id: int) -> TombstoneResponseDto:
+        """Accept an invite and add user to share list"""
+        import json
+        
+        tombstone = self.repository.get_by_invite_token(invite_token)
+        
+        if not tombstone:
+            raise ValueError("Invalid invite token")
+        
+        # Parse current share list
+        current_share = []
+        if tombstone.share:
+            try:
+                current_share = json.loads(tombstone.share)
+            except:
+                current_share = []
+        
+        # Add user to share list if not already there
+        if user_id not in current_share:
+            current_share.append(user_id)
+            share_json = json.dumps(current_share)
+            self.repository.update_share_list(tombstone.id, share_json)
+        
+        # Return updated tombstone
+        return self.get_tombstone(tombstone.id)

@@ -18,6 +18,9 @@ RUN uv pip install --system -e .
 # Copy application code
 COPY ./app ./app
 
+# Copy migrations
+COPY ./migrations ./migrations
+
 # Expose port
 EXPOSE 8000
 
