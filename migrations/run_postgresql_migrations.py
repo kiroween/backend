@@ -99,8 +99,9 @@ def main():
     
     # 마이그레이션 파일 목록
     migrations = [
-        "add_enroll_share_fields_postgresql.sql",
-        "add_invite_token_postgresql.sql",
+        "add_share_token_postgresql.sql",  # 공유 링크 토큰 (기존)
+        "add_enroll_share_fields_postgresql.sql",  # 친구 초대 필드
+        "add_invite_token_postgresql.sql",  # 초대 링크 토큰
     ]
     
     # 데이터베이스 연결

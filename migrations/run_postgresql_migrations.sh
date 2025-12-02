@@ -24,6 +24,7 @@ echo -e "${GREEN}✓ DATABASE_URL 확인 완료${NC}"
 
 # 마이그레이션 파일 목록
 MIGRATIONS=(
+    "add_share_token_postgresql.sql"
     "add_enroll_share_fields_postgresql.sql"
     "add_invite_token_postgresql.sql"
 )

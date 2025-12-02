@@ -35,8 +35,9 @@ def run_migrations():
 def run_sqlite_migrations():
     """Run SQLite migrations"""
     migrations = [
-        "add_enroll_share_fields.sql",
-        "add_invite_token.sql",
+        "add_share_token.sql",  # 공유 링크 토큰 (기존)
+        "add_enroll_share_fields.sql",  # 친구 초대 필드
+        "add_invite_token.sql",  # 초대 링크 토큰
     ]
     
     migrations_dir = Path(__file__).parent.parent.parent / "migrations"
@@ -86,8 +87,9 @@ def run_sqlite_migrations():
 def run_postgresql_migrations():
     """Run PostgreSQL migrations"""
     migrations = [
-        "add_enroll_share_fields_postgresql.sql",
-        "add_invite_token_postgresql.sql",
+        "add_share_token_postgresql.sql",  # 공유 링크 토큰 (기존)
+        "add_enroll_share_fields_postgresql.sql",  # 친구 초대 필드
+        "add_invite_token_postgresql.sql",  # 초대 링크 토큰
     ]
     
     migrations_dir = Path(__file__).parent.parent.parent / "migrations"
@@ -129,16 +131,18 @@ def check_migration_status():
             result = conn.execute(text("SELECT * FROM tombstones LIMIT 0"))
             columns = result.keys()
             
+            has_share_token = 'share_token' in columns
             has_enroll = 'enroll' in columns
             has_share = 'share' in columns
             has_invite_token = 'invite_token' in columns
             
             logger.info(f"Migration status:")
+            logger.info(f"  - share_token: {'✓' if has_share_token else '✗'}")
             logger.info(f"  - enroll: {'✓' if has_enroll else '✗'}")
             logger.info(f"  - share: {'✓' if has_share else '✗'}")
             logger.info(f"  - invite_token: {'✓' if has_invite_token else '✗'}")
             
-            return has_enroll and has_share and has_invite_token
+            return has_share_token and has_enroll and has_share and has_invite_token
             
     except Exception as e:
         logger.error(f"Failed to check migration status: {e}")
