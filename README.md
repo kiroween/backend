@@ -1,44 +1,54 @@
 # TimeGrave API
 
-디지털 타임캡슐(묘지) 관리 API - FastAPI 기반
+> A digital time capsule for your future self and loved ones
 
-## 프로젝트 개요
+TimeGrave is a web application that allows you to create digital time capsules that automatically unlock on a specific date. Store precious memories and messages, and when the set date arrives, listen to them as audio messages.
 
-TimeGrave는 사용자가 특정 날짜에 열리도록 설정된 디지털 타임캡슐에 기억과 메시지를 저장할 수 있는 웹 애플리케이션입니다.
+## ✨ Key Features
 
-## 기술 스택
+- 🔒 **Time Lock**: Time capsules that automatically unlock on a future date
+- 🎙️ **Text-to-Speech**: Automatic voice conversion when unlocked (Supertone TTS)
+- 👥 **Collaborative Writing**: Invite friends to write together
+- 🔗 **Sharing**: Share unlocked time capsules with friends
+- ☁️ **Cloud Storage**: Securely store audio files on AWS S3
+- 🔐 **Security**: JWT-based authentication for privacy protection
 
-- **Framework**: FastAPI
-- **Database**: SQLite / PostgreSQL
-- **ORM**: SQLAlchemy
-- **Validation**: Pydantic
-- **Scheduler**: APScheduler
-- **Cloud Storage**: AWS S3 (음성 파일 저장)
-- **TTS**: Supertone API (텍스트 음성 변환)
-- **Package Manager**: uv (Rust 기반 초고속 패키지 관리자)
-- **Container**: Docker
+## 🛠 Tech Stack
 
-## 시작하기
+| Category | Technology |
+|----------|------------|
+| **Framework** | FastAPI |
+| **Database** | SQLite / PostgreSQL (RDS) |
+| **ORM** | SQLAlchemy |
+| **Validation** | Pydantic |
+| **Scheduler** | APScheduler (Auto-unlock at midnight daily) |
+| **Cloud Storage** | AWS S3 |
+| **TTS** | Supertone API |
+| **Package Manager** | uv (Rust-based ultra-fast) |
+| **Container** | Docker |
+| **Authentication** | JWT |
 
-### Docker를 사용한 실행 (권장)
+## Getting Started
+
+### Running with Docker (Recommended)
 
 ```bash
-# Docker 컨테이너 빌드 및 실행
+# Build and run Docker container
 docker-compose up --build
 
-# 백그라운드 실행
+# Run in background
 docker-compose up -d
 
-# 로그 확인
+# View logs
 docker-compose logs -f
 
-# 중지
+# Stop
 docker-compose down
 ```
 
-### 로컬 개발 환경 (uv 사용)
+### Local Development (using uv)
 
-#### uv 설치
+#### Install uv
 
 ```bash
 # Mac/Linux
@@ -47,77 +57,114 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Windows
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-# 또는 pip로 설치
+# Or install with pip
 pip install uv
 ```
 
-#### 프로젝트 실행
+#### Run Project
 
 ```bash
-# 가상환경 생성 및 의존성 설치
+# Create virtual environment and install dependencies
 uv venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-# 의존성 설치
+# Install dependencies
 uv pip install -e .
 
-# 개발 의존성 포함 설치
+# Install with dev dependencies
 uv pip install -e ".[dev]"
 
-# 개발 서버 실행
+# Run development server
 uvicorn app.main:app --reload
 ```
 
-#### uv의 장점
+#### Why uv?
 
-- ⚡ **10-100배 빠른 속도**: Rust로 작성되어 pip보다 훨씬 빠름
-- 🔒 **자동 잠금 파일**: 재현 가능한 빌드 보장
-- 📦 **통합 도구**: 가상환경, 패키지 설치, 프로젝트 관리 통합
+- ⚡ **10-100x Faster**: Written in Rust, much faster than pip
+- 🔒 **Automatic Lock Files**: Ensures reproducible builds
+- 📦 **Unified Tool**: Integrates virtual environments, package installation, and project management
 
-## 주요 기능
+## 📖 Use Cases
 
-- 📝 **타임캡슐 생성**: 미래의 특정 날짜에 열리는 디지털 타임캡슐 생성
-- 🔒 **자동 잠금/해제**: 설정된 날짜에 자동으로 잠금 해제
-- 🎙️ **TTS 음성 변환**: 잠금 해제된 타임캡슐 조회 시 자동으로 음성 생성
-- ☁️ **클라우드 저장**: AWS S3에 음성 파일 안전하게 저장 및 재사용
-- 🔐 **사용자 인증**: JWT 기반 인증 시스템
-- 🔗 **친구 공유**: 타임캡슐을 친구에게 공유하고 복사할 수 있는 기능
+### 1. Message to Future Self
+Write a message to yourself 1 year, 5 years in the future and set a lock
+→ When the set date arrives, it automatically unlocks and you can listen to it as audio
 
-## API 엔드포인트
+### 2. Collaborate with Friends
+Invite friends to write a time capsule together
+→ Multiple people can record memories together and open them in the future
 
-서버 실행 후 다음 URL에서 API 문서를 확인할 수 있습니다:
+### 3. Special Message to Loved Ones
+Set it to unlock on special days (birthdays, anniversaries) to deliver messages
+→ Share via link with friends or copy to their account
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+## 🎯 Core Features
 
-### 주요 엔드포인트
+### Time Capsule Management
+- **Create**: Set title, content, and unlock date
+- **Auto-Unlock**: Scheduler automatically checks and unlocks at midnight (KST) daily
+- **View**: Content hidden when locked, fully revealed after unlock
+- **Voice Conversion**: Automatic TTS generation and S3 storage on first view after unlock
 
-#### 타임캡슐 관리
-- `GET /api/graves` - 모든 타임캡슐 목록 조회
-- `POST /api/graves` - 새로운 타임캡슐 생성
-- `GET /api/graves/{id}` - 특정 타임캡슐 조회 (잠금 해제 시 TTS 자동 생성 및 음성 URL 제공)
+### Friend Invitation
+- **Generate Invite Link**: Create unique invitation link for friends
+- **Grant Write Permission**: Invited friends can write together
+- **Permission Management**: Add or remove friends anytime
 
-#### 친구 공유 기능
-- `POST /api/graves/{id}/share` - 공유 링크 생성
-- `GET /api/graves/shared/{share_token}` - 공유된 타임캡슐 조회 (회원가입 필수)
-- `POST /api/graves/shared/{share_token}/copy` - 공유된 타임캡슐을 내 계정에 저장
+### Sharing
+- **Generate Share Link**: Share unlocked time capsules as read-only
+- **Copy Feature**: Save shared time capsules to your account
+- **Audio Reuse**: Cost savings by reusing the same audio file
 
-## 환경 설정
+## 📡 API Documentation
 
-### 필수 환경 변수
+After running the server, you can access interactive API documentation at:
 
-`.env` 파일을 생성하고 다음 변수들을 설정하세요:
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+### Main Endpoints
+
+#### User Management
+- `POST /api/users` - Sign up
+- `POST /api/users/sign-in` - Sign in
+- `POST /api/users/sign-out` - Sign out
+- `DELETE /api/users` - Delete account
+
+#### Time Capsule Management
+- `GET /api/graves` - List my time capsules
+- `POST /api/graves` - Create new time capsule
+- `GET /api/graves/{id}` - Get time capsule details (auto-generates TTS on unlock)
+- `POST /api/graves/unlock-check` - Manual unlock check (for testing)
+
+#### Friend Invitation (Write Permission)
+- `POST /api/graves/{id}/invite` - Generate invite link
+- `POST /api/graves/invite/{invite_token}/accept` - Accept invitation
+- `PATCH /api/graves/{id}/share` - Add/remove friends
+
+#### Sharing (Read-Only)
+- `POST /api/graves/{id}/share` - Generate share link
+- `GET /api/graves/shared/{share_token}` - View shared time capsule
+- `POST /api/graves/shared/{share_token}/copy` - Copy to my account
+
+For detailed API specifications, see [API Documentation](docs/API_DOCUMENTATION.md).
+
+## Environment Configuration
+
+### Required Environment Variables
+
+Create a `.env` file and configure the following variables:
 
 ```bash
-# 데이터베이스
+# Database
 DATABASE_URL=sqlite:///./data/timegrave.db
 
-# JWT 인증
+# JWT Authentication
 JWT_SECRET_KEY=your-secret-key
 JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-# AWS S3 (TTS 음성 파일 저장)
+# AWS S3 (TTS audio file storage)
 AWS_ACCESS_KEY_ID=your-aws-access-key-id
 AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
 AWS_REGION=ap-northeast-2
@@ -128,78 +175,139 @@ SUPERTONE_API_KEY=your-supertone-api-key
 SUPERTONE_API_URL=https://supertoneapi.com/v1/text-to-speech/a929cf8981cbfd9b8e6eb3
 ```
 
-자세한 설정 방법은 [TTS 및 S3 연동 가이드](docs/tts-s3-setup.md)를 참고하세요.
+For detailed setup instructions, see [TTS and S3 Setup Guide](docs/tts-s3-setup.md).
 
-## 프로젝트 구조
+## 📂 Project Structure
 
 ```
-.
+timegrave-api/
 ├── app/
-│   ├── main.py              # FastAPI 애플리케이션 진입점
-│   ├── core/                # 설정 및 핵심 기능
-│   ├── models/              # SQLAlchemy 데이터베이스 모델
-│   ├── schemas/             # Pydantic 스키마
-│   ├── repositories/        # 데이터 접근 계층
-│   ├── services/            # 비즈니스 로직 (TTS, S3 포함)
-│   ├── routers/             # API 라우터
-│   └── utils/               # 유틸리티 함수
-├── data/                    # SQLite 데이터베이스 파일
-├── docs/                    # 문서
-├── migrations/              # 데이터베이스 마이그레이션
-├── scripts/                 # 유틸리티 스크립트
-├── tests/                   # 테스트 코드
-├── Dockerfile               # Docker 이미지 정의
-├── docker-compose.yml       # Docker Compose 설정
-└── pyproject.toml           # 프로젝트 설정 및 의존성
+│   ├── main.py                    # FastAPI application entry point
+│   ├── core/
+│   │   └── config.py              # Environment configuration
+│   ├── models/
+│   │   ├── database.py            # Database connection
+│   │   ├── user.py                # User model
+│   │   └── tombstone.py           # Time capsule model
+│   ├── schemas/
+│   │   ├── user.py                # User schema
+│   │   └── tombstone.py           # Time capsule schema
+│   ├── repositories/              # Data access layer
+│   │   ├── user_repository.py
+│   │   └── tombstone_repository.py
+│   ├── services/                  # Business logic
+│   │   ├── user_service.py
+│   │   ├── tombstone_service.py
+│   │   ├── tts_service.py         # TTS voice conversion
+│   │   ├── s3_service.py          # S3 upload/download
+│   │   └── scheduler.py           # Auto-unlock scheduler
+│   ├── routers/                   # API routers
+│   └── utils/                     # Utility functions
+│       ├── auth.py                # JWT authentication
+│       └── response_formatter.py  # Response formatting
+├── data/                          # SQLite database
+├── docs/                          # Documentation
+│   ├── API_DOCUMENTATION.md       # Detailed API docs
+│   ├── FRIEND_WRITE_FEATURE.md    # Friend invitation guide
+│   └── TTS_IMPLEMENTATION_SUMMARY.md
+├── migrations/                    # Database migrations
+├── tests/                         # Test code
+├── deploy/                        # Deployment scripts
+├── Dockerfile                     # Docker image
+├── docker-compose.yml             # Docker Compose config
+└── pyproject.toml                 # Project dependencies
 ```
 
-## 개발
+## Development
 
-### 의존성 관리
+### Dependency Management
 
 ```bash
-# 새 패키지 추가
+# Add new package
 uv pip install <package-name>
 
-# 개발 의존성 추가
+# Add dev dependency
 uv pip install --dev <package-name>
 
-# 의존성 업데이트
+# Update dependency
 uv pip install --upgrade <package-name>
 
-# 모든 의존성 동기화
+# Sync all dependencies
 uv pip sync
 ```
 
-### 테스트 실행
+### Running Tests
 
 ```bash
-# 모든 테스트 실행
+# Run all tests
 pytest
 
-# 커버리지와 함께 실행
+# Run with coverage
 pytest --cov=app
 
-# 특정 테스트 파일 실행
+# Run specific test file
 pytest tests/test_tombstone.py
 
-# TTS 및 S3 연동 테스트
+# Test TTS and S3 integration
 python scripts/test_tts_s3.py
 ```
 
-### 코드 품질
+### Code Quality
 
 ```bash
-# Ruff로 린팅
+# Lint with Ruff
 ruff check .
 
-# Ruff로 자동 수정
+# Auto-fix with Ruff
 ruff check --fix .
 
-# 포맷팅
+# Format code
 ruff format .
 ```
 
-## 라이선스
+## 🔍 Key Technical Implementations
+
+### Auto-Unlock System
+- **APScheduler**: Runs automatically at midnight (KST) daily
+- **Operation**: Automatically unlocks time capsules where `unlock_date <= today`
+- **Timezone**: Based on Korea Standard Time (KST, UTC+9)
+
+### Text-to-Speech Conversion
+- **Generation Timing**: On first view after unlock (cost optimization)
+- **Flow**: 
+  1. View unlocked time capsule
+  2. Generate TTS with Supertone API
+  3. Upload to AWS S3
+  4. Save audio_url to DB
+  5. Reuse saved URL for subsequent views
+
+### Friend Invitation System
+- **Invite Link**: UUID-based unique token generation
+- **Permission Management**: Store user_id in share array (JSON)
+- **Duplicate Prevention**: Already invited friends cannot be re-invited
+
+### Sharing vs Invitation
+| Feature | Share (share_token) | Invite (invite_token) |
+|---------|--------------------|-----------------------|
+| Purpose | Read-only | Write permission |
+| Access | View only | Collaborative writing |
+| Copy | Available | Not needed |
+
+## 📚 Additional Documentation
+
+- [Detailed API Documentation](docs/API_DOCUMENTATION.md)
+- [Friend Invitation Feature Guide](docs/FRIEND_WRITE_FEATURE.md)
+- [Friend Invitation Testing Guide](TEST_INVITE_FEATURE.md)
+- [TTS Implementation Summary](docs/TTS_IMPLEMENTATION_SUMMARY.md)
+- [TTS and S3 Setup Guide](docs/tts-s3-setup.md)
+- [EC2 Deployment Guide](docs/README.md)
+- [RDS Migration Guide](docs/rds-migration.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+
+## 🤝 Contributing
+
+Issues and PRs are always welcome!
+
+## 📄 License
 
 MIT
